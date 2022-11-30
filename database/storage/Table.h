@@ -3,7 +3,8 @@
 
 #include <iostream>
 
-#include "Record.h"
+// #include "Record.h"
+#include "TableRecord.h"
 #include "RecordSchema.h"
 #include "Meta.h"
 #include "HashIndex.h"
@@ -48,6 +49,7 @@ public:
         gallocator, thread_id);
   }
 
+  // TODO(weihaosun): use record_size or table_record_size
   void ReportTableSize() const {
     uint64_t size = primary_index_->GetRecordCount()
         * schema_ptr_->GetSchemaSize();
@@ -104,13 +106,13 @@ public:
     return ret;
   }
 
- private:
-  size_t table_id_;
-  size_t secondary_count_;
+  private:
+    size_t table_id_;
+    size_t secondary_count_;
 
-  RecordSchema *schema_ptr_;
-  HashIndex *primary_index_;
-  HashIndex **secondary_indexes_; // Currently disabled
+    RecordSchema *schema_ptr_;
+    HashIndex *primary_index_;
+    HashIndex **secondary_indexes_; // Currently disabled
 };
 }
 #endif

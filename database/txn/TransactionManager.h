@@ -9,6 +9,8 @@
 #include "StorageManager.h"
 #include "Record.h"
 #include "Records.h"
+#include "TableRecord.h"
+#include "TableRecords.h"
 #include "TxnParam.h"
 #include "CharArray.h"
 #include "TxnContext.h"
@@ -70,12 +72,12 @@ class TransactionManager {
                       Record *&record, const GAddr &data_addr,
                       AccessType access_type);
 
-  bool TryWLockRecord(const GAddr& data_addr, size_t schema_size) {
-    epicLog(LOG_DEBUG, "this=%p, data_addr=%lx, schema_size=%d",
-        this, data_addr, schema_size);
+  bool TryWLockRecord(const GAddr& data_addr, size_t data_size) {
+    epicLog(LOG_DEBUG, "this=%p, data_addr=%lx, data_size=%d",
+        this, data_addr, data_size);
     bool success = true;
     size_t try_count = 0;
-    while (gallocators[thread_id_]->Try_WLock(data_addr, schema_size) != 0) {
+    while (gallocators[thread_id_]->Try_WLock(data_addr, data_size) != 0) {
       if (++try_count >= kTryLockLimit) {
         success = false;
         break;
@@ -84,12 +86,12 @@ class TransactionManager {
     return success;
   }
 
-  bool TryRLockRecord(const GAddr& data_addr, size_t schema_size) {
-    epicLog(LOG_DEBUG, "this=%p, data_addr=%lx, schema_size=%d",
-        this, data_addr, schema_size);
+  bool TryRLockRecord(const GAddr& data_addr, size_t data_size) {
+    epicLog(LOG_DEBUG, "this=%p, data_addr=%lx, data_size=%d",
+        this, data_addr, data_size);
     bool success = true;
     size_t try_count = 0;
-    while (gallocators[thread_id_]->Try_RLock(data_addr, schema_size) != 0) {
+    while (gallocators[thread_id_]->Try_RLock(data_addr, data_size) != 0) {
       if (++try_count >= kTryLockLimit) {
         success = false;
         break;
@@ -98,10 +100,10 @@ class TransactionManager {
     return success;
   }
 
-  void UnLockRecord(const GAddr &data_addr, size_t schema_size) {
-    epicLog(LOG_DEBUG, "this=%p, data_addr=%lx, schema_size=%d",
-        this, data_addr, schema_size);
-    gallocators[thread_id_]->UnLock(data_addr, schema_size);
+  void UnLockRecord(const GAddr &data_addr, size_t data_size) {
+    epicLog(LOG_DEBUG, "this=%p, data_addr=%lx, data_size=%d",
+        this, data_addr, data_size);
+    gallocators[thread_id_]->UnLock(data_addr, data_size);
   }
 
  public:

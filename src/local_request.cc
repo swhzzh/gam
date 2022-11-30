@@ -51,6 +51,7 @@ int Worker::ProcessLocalHTable(WorkRequest* pwr) {
 int Worker::ProcessLocalMalloc(WorkRequest* wr) {
   epicAssert(!(wr->flag & ASYNC));
   if ((wr->flag & REMOTE) || (wr->addr && !IsLocal(wr->addr))) {  //remote alloc
+    // find remote worker with largest free memory
     Client* cli = GetClient(wr->addr);
     if (!cli) {
       //wr->status = ALLOC_ERROR;
@@ -125,7 +126,8 @@ int Worker::ProcessLocalMalloc(WorkRequest* wr) {
     wr->addr = TO_GLOB(addr, base, GetWorkerId());
     wr->status = SUCCESS;
     ghost_size += wr->size;
-    if (abs(ghost_size.load()) > conf->ghost_th)
+    // if (abs(ghost_size.load()) > conf->ghost_th)
+    if (ghost_size.load() > conf->ghost_th)
       SyncMaster();
   } else {
     wr->status = ALLOC_ERROR;
@@ -159,7 +161,8 @@ int Worker::ProcessLocalFree(WorkRequest* wr) {
     void* addr = ToLocal(wr->addr);
     Size size = sb.sb_free(addr);
     ghost_size -= size;
-    if (abs(ghost_size.load()) > conf->ghost_th)
+    // if (abs(ghost_size.load()) > conf->ghost_th)
+    if (ghost_size.load() > conf->ghost_th)
       SyncMaster();
   } else {
     Client* cli = GetClient(wr->addr);

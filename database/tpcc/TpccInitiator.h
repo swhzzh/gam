@@ -19,7 +19,9 @@ protected:
   virtual void RegisterTables(const GAddr& storage_addr, 
       const std::vector<RecordSchema*>& schemas) {
     StorageManager storage_manager;
+    // 创建所有table的primary index(在gam中创建对应的数据结构hash index)
     storage_manager.RegisterTables(schemas, default_gallocator);
+    // 将table_count和每个table的schema以及index(hash index: bucket count, root addr等)写入gam中
     storage_manager.Serialize(storage_addr, default_gallocator);
   }
 

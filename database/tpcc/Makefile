@@ -1,8 +1,8 @@
 CPP = g++ -std=c++11
 GAM_INCLUDE = -I../../include -I../ -I../../lib/libcuckoo/src -I../../lib/libcuckoo/cityhash-1.1.1/src
-DB_INCLUDE = -I.. -I../bench -I../storage -I../txn -I../utils
+DB_INCLUDE = -I.. -I../bench -I../storage -I../txn -I../utils -I../content
 INCLUDE = $(GAM_INCLUDE) $(DB_INCLUDE)
-LIBS = ../../src/libgalloc.a -libverbs -lboost_filesystem -lboost_system -lboost_date_time -lboost_thread ../../lib/libcuckoo/cityhash-1.1.1/src/.libs/libcityhash.a
+LIBS = ../../src/libgalloc.a -libverbs -lboost_filesystem -lboost_system -lboost_date_time -lboost_thread ../../lib/libcuckoo/cityhash-1.1.1/src/.libs/libcityhash.a -lpthread
 CFLAGS += -O3 -DLOCK -DBACKOFF #-DPROFILE
 
 all: tpcc

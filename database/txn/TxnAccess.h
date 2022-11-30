@@ -2,7 +2,8 @@
 #ifndef __DATABASE_TXN_TXN_ACCESS_H__
 #define __DATABASE_TXN_TXN_ACCESS_H__
 
-#include "Record.h"
+// #include "Record.h"
+#include "TableRecord.h"
 #include "gallocator.h"
 
 namespace Database {
@@ -11,7 +12,8 @@ struct Access {
       : access_record_(nullptr), access_addr_(Gnullptr) {
   }
   AccessType access_type_;
-  Record *access_record_;
+  // Record *access_record_;
+  TableRecord* access_record_;
   GAddr access_addr_;
 };
 

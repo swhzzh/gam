@@ -16,17 +16,20 @@ using hkey_t = char*;
 
 #define BKT_SIZE 128
 #define ENTRY_SIZE 12 // 12bit tag + 20bit size + 64bit value
-#define BKT_SLOT (BKT_SIZE / ENTRY_SIZE)
+#define BKT_SLOT (BKT_SIZE / ENTRY_SIZE)  // 剩余的8字节用来作为指向同一个逻辑的bucket的下一个物理bucket的指针
 
+// 区分同bucket内部元素
 #define TAG_BITS 11 
 #define TAG_MASK ((1UL << TAG_BITS) - 1)
 #define TAG(hash) (hash & TAG_MASK) 
 
+// 决定bucket?
 #define BKT_BITS 24
 #define NBKT (1UL << BKT_BITS)
 #define BKT_MASK ((1UL << BKT_BITS) - 1)
 #define BUCKET(hash) ((hash >> TAG_BITS) & BKT_MASK)
 
+// 决定hash table所属worker id
 #define TBL_BITS (64 - TAG_BITS - BKT_BITS)
 #define TBL(hash) ((hash >> (64 - TBL_BITS)))
 

@@ -10,6 +10,8 @@
 namespace Database {
 class Record : public GAMObject{
 public:
+  Record() : schema_ptr_(NULL), data_ptr_(NULL), data_size_(0) {}
+
   Record(RecordSchema *schema_ptr) : schema_ptr_(schema_ptr) {
     data_size_ = schema_ptr_->GetSchemaSize();
     data_ptr_ = new char[data_size_];

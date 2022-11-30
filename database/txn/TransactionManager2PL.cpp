@@ -7,13 +7,14 @@ namespace Database {
       size_t table_id, const IndexKey* keys, 
       size_t key_num, Record *record, const GAddr& data_addr) {
     PROFILE_TIME_START(thread_id_, CC_INSERT);
-    RecordSchema *schema_ptr = storage_manager_->tables_[table_id]->GetSchema();
-    bool lock_success = TryWLockRecord(data_addr, schema_ptr->GetSchemaSize());
+    // RecordSchema *schema_ptr = storage_manager_->tables_[table_id]->GetSchema();
+    TableRecord* table_record = new TableRecord(record);
+    bool lock_success = TryWLockRecord(data_addr, table_record->GetSerializeSize());
     assert(lock_success == true); // since record is thread local
     record->SetVisible(true);
     Access* access = access_list_.NewAccess();
     access->access_type_ = INSERT_ONLY;
-    access->access_record_ = record;
+    access->access_record_ = table_record;  // should take ownership of table record(responsible for freeing memory)
     access->access_addr_ = data_addr;
     PROFILE_TIME_START(thread_id_, INDEX_INSERT);
     //bool ret = storage_manager_->tables_[table_id]->InsertRecord(keys, key_num, record->data_addr_, thread_id_);
@@ -30,25 +31,28 @@ namespace Database {
         thread_id_, table_id, access_type, data_addr);
     PROFILE_TIME_START(thread_id_, CC_SELECT);
     RecordSchema *schema_ptr = storage_manager_->tables_[table_id]->GetSchema();
+    record = new Record(schema_ptr);
+    TableRecord* table_record = new TableRecord(record);
     bool lock_success = true;
     if (access_type == READ_ONLY) {
       PROFILE_TIME_START(thread_id_, LOCK_READ);
-      lock_success = TryRLockRecord(data_addr, schema_ptr->GetSchemaSize());
+      lock_success = TryRLockRecord(data_addr, table_record->GetSerializeSize());
       PROFILE_TIME_END(thread_id_, LOCK_READ);
     }
     else {
       // DELETE_ONLY, READ_WRITE
       PROFILE_TIME_START(thread_id_, LOCK_WRITE);
-      lock_success = TryWLockRecord(data_addr, schema_ptr->GetSchemaSize());
+      lock_success = TryWLockRecord(data_addr, table_record->GetSerializeSize());
       PROFILE_TIME_END(thread_id_, LOCK_WRITE);
     }
 
     if (lock_success) {
-      record = new Record(schema_ptr);
-      record->Deserialize(data_addr, gallocators[thread_id_]);
+      // record = new Record(schema_ptr);
+      // record->Deserialize(data_addr, gallocators[thread_id_]);
+      table_record->Deserialize(data_addr, gallocators[thread_id_]);
       Access* access = access_list_.NewAccess();
       access->access_type_ = access_type;
-      access->access_record_ = record;
+      access->access_record_ = table_record;
       access->access_addr_ = data_addr;
       if (access_type == DELETE_ONLY) {
         record->SetVisible(false);
@@ -57,6 +61,7 @@ namespace Database {
       return true;
     }
     else { // fail to acquire lock
+      delete table_record;
       PROFILE_TIME_END(thread_id_, CC_SELECT);
       epicLog(LOG_DEBUG, "thread_id=%u,table_id=%u,access_type=%u,data_addr=%lx,lock fail, abort", 
           thread_id_, table_id, access_type,data_addr);
