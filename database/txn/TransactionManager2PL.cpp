@@ -3,9 +3,12 @@
 #include "TransactionManager.h"
 
 namespace Database {
-  bool TransactionManager::InsertRecord(TxnContext* context, 
-      size_t table_id, const IndexKey* keys, 
-      size_t key_num, Record *record, const GAddr& data_addr) {
+  bool TransactionManager::InsertRecord(TxnContext* context,
+                                        size_t table_id,
+                                        const IndexKey* keys,
+                                        size_t key_num,
+                                        Record *record,
+                                        const GAddr& data_addr) {
     PROFILE_TIME_START(thread_id_, CC_INSERT);
     // RecordSchema *schema_ptr = storage_manager_->tables_[table_id]->GetSchema();
     TableRecord* table_record = new TableRecord(record);
@@ -16,17 +19,19 @@ namespace Database {
     access->access_type_ = INSERT_ONLY;
     access->access_record_ = table_record;  // should take ownership of table record(responsible for freeing memory)
     access->access_addr_ = data_addr;
-    PROFILE_TIME_START(thread_id_, INDEX_INSERT);
+    access->timestamp_ = 0;
+    // PROFILE_TIME_START(thread_id_, INDEX_INSERT);
     //bool ret = storage_manager_->tables_[table_id]->InsertRecord(keys, key_num, record->data_addr_, thread_id_);
-    PROFILE_TIME_END(thread_id_, INDEX_INSERT);
+    // PROFILE_TIME_END(thread_id_, INDEX_INSERT);
     PROFILE_TIME_END(thread_id_, CC_INSERT);
     return true;
   }
 
-  bool TransactionManager::SelectRecordCC(
-      TxnContext* context, size_t table_id, 
-      Record *&record, const GAddr &data_addr, 
-      AccessType access_type) {
+  bool TransactionManager::SelectRecordCC(TxnContext* context,
+                                          size_t table_id, 
+                                          Record*& record,
+                                          const GAddr &data_addr, 
+                                          AccessType access_type) {
     epicLog(LOG_DEBUG, "thread_id=%u,table_id=%u,access_type=%u,data_addr=%lx, start SelectRecordCC", 
         thread_id_, table_id, access_type, data_addr);
     PROFILE_TIME_START(thread_id_, CC_SELECT);
@@ -54,6 +59,7 @@ namespace Database {
       access->access_type_ = access_type;
       access->access_record_ = table_record;
       access->access_addr_ = data_addr;
+      access->timestamp_ = 0;
       if (access_type == DELETE_ONLY) {
         record->SetVisible(false);
       }
@@ -81,16 +87,17 @@ namespace Database {
           access->access_type_ == INSERT_ONLY || 
           access->access_type_ == READ_WRITE);
       // write back
-      Record *record = access->access_record_;
+      // Record *record = access->access_record_;
+      TableRecord* table_record = access->access_record_;
       if (access->access_type_ == READ_WRITE) {
-        record->Serialize(access->access_addr_, gallocators[thread_id_]);
+        table_record->Serialize(access->access_addr_, gallocators[thread_id_]);
       }
       else if (access->access_type_ == DELETE_ONLY) {
-        record->Serialize(access->access_addr_, 
-            gallocators[thread_id_]);
+        table_record->Serialize(access->access_addr_,
+                                gallocators[thread_id_]);
       }
       // unlock
-      this->UnLockRecord(access->access_addr_, record->GetSchemaSize());
+      this->UnLockRecord(access->access_addr_, table_record->GetSerializeSize());
     }
     //GC
     for (size_t i = 0; i < access_list_.access_count_; ++i) {
@@ -113,11 +120,12 @@ namespace Database {
     PROFILE_TIME_START(thread_id_, CC_ABORT);
     for (size_t i = 0; i < access_list_.access_count_; ++i) {
       Access* access = access_list_.GetAccess(i);
-      Record *record = access->access_record_;
+      // Record *record = access->access_record_;
+      TableRecord* table_record = access->access_record_;
       // unlock
-      this->UnLockRecord(access->access_addr_, record->GetSchemaSize());
+      this->UnLockRecord(access->access_addr_, table_record->GetSerializeSize());
       if (access->access_type_ == INSERT_ONLY) {
-        record->SetVisible(false);
+        table_record->record_->SetVisible(false);
         gallocators[thread_id_]->Free(access->access_addr_);
       }
     }

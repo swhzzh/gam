@@ -38,8 +38,7 @@ namespace Database {
 
     private:
         std::atomic<uint64_t> timestamp_;
-    };
-}
-
+    };  // class LockContentWithTs
+};  // namespace Database
 
 #endif

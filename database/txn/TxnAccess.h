@@ -9,12 +9,13 @@
 namespace Database {
 struct Access {
   Access()
-      : access_record_(nullptr), access_addr_(Gnullptr) {
+      : access_record_(nullptr), access_addr_(Gnullptr), timestamp_(0) {
   }
   AccessType access_type_;
   // Record *access_record_;
   TableRecord* access_record_;
   GAddr access_addr_;
+  uint64_t timestamp_;
 };
 
 template<int N>

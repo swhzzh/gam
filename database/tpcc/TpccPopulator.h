@@ -381,7 +381,7 @@ class TpccPopulator : public BenchmarkPopulator {
   void InsertItemRecord(ItemRecord* record_ptr, TableRecord *table_record_buf,
                         size_t thread_id) {
     GAlloc *gallocator = gallocators[thread_id];
-    Record* record_buf = &(table_record_buf->record_);
+    Record* record_buf = table_record_buf->record_;
     GAddr data_addr = gallocator->Malloc(table_record_buf->GetSerializeSize());
     record_buf->SetColumn(0, &record_ptr->i_id_);
     record_buf->SetColumn(1, &record_ptr->i_im_id_);
@@ -398,7 +398,7 @@ class TpccPopulator : public BenchmarkPopulator {
   void InsertWarehouseRecord(WarehouseRecord* record_ptr, TableRecord *table_record_buf,
                              size_t thread_id) {
     GAlloc *gallocator = gallocators[thread_id];
-    Record* record_buf = &(table_record_buf->record_);
+    Record* record_buf = table_record_buf->record_;
     GAddr data_addr = gallocator->Malloc(table_record_buf->GetSerializeSize());
     record_buf->SetColumn(0, &record_ptr->w_id_);
     record_buf->SetColumn(1, record_ptr->w_name_, 16);
@@ -419,7 +419,7 @@ class TpccPopulator : public BenchmarkPopulator {
   void InsertDistrictRecord(DistrictRecord* record_ptr, TableRecord *table_record_buf,
                             size_t thread_id) {
     GAlloc *gallocator = gallocators[thread_id];
-    Record* record_buf = &(table_record_buf->record_);
+    Record* record_buf = table_record_buf->record_;
     GAddr data_addr = gallocator->Malloc(table_record_buf->GetSerializeSize());
     record_buf->SetColumn(0, &record_ptr->d_id_);
     record_buf->SetColumn(1, &record_ptr->d_w_id_);
@@ -442,7 +442,7 @@ class TpccPopulator : public BenchmarkPopulator {
   void InsertCustomerRecord(CustomerRecord* record_ptr, TableRecord *table_record_buf,
                             size_t thread_id) {
     GAlloc *gallocator = gallocators[thread_id];
-    Record* record_buf = &(table_record_buf->record_);
+    Record* record_buf = table_record_buf->record_;
     GAddr data_addr = gallocator->Malloc(table_record_buf->GetSerializeSize());
     record_buf->SetColumn(0, &record_ptr->c_id_);
     record_buf->SetColumn(1, &record_ptr->c_d_id_);
@@ -476,7 +476,7 @@ class TpccPopulator : public BenchmarkPopulator {
   void InsertStockRecord(StockRecord* record_ptr, TableRecord *table_record_buf,
                          size_t thread_id) {
     GAlloc *gallocator = gallocators[thread_id];
-    Record* record_buf = &(table_record_buf->record_);
+    Record* record_buf = table_record_buf->record_;
     GAddr data_addr = gallocator->Malloc(table_record_buf->GetSerializeSize());
     record_buf->SetColumn(0, &record_ptr->s_i_id_);
     record_buf->SetColumn(1, &record_ptr->s_w_id_);
@@ -498,7 +498,7 @@ class TpccPopulator : public BenchmarkPopulator {
   void InsertOrderRecord(OrderRecord* record_ptr, TableRecord *table_record_buf,
                          size_t thread_id) {
     GAlloc *gallocator = gallocators[thread_id];
-    Record* record_buf = &(table_record_buf->record_);
+    Record* record_buf = table_record_buf->record_;
     GAddr data_addr = gallocator->Malloc(table_record_buf->GetSerializeSize());
     record_buf->SetColumn(0, &record_ptr->o_id_);
     record_buf->SetColumn(1, &record_ptr->o_c_id_);
@@ -519,7 +519,7 @@ class TpccPopulator : public BenchmarkPopulator {
   void InsertNewOrderRecord(NewOrderRecord* record_ptr, TableRecord *table_record_buf,
                             size_t thread_id) {
     GAlloc *gallocator = gallocators[thread_id];
-    Record* record_buf = &(table_record_buf->record_);
+    Record* record_buf = table_record_buf->record_;
     GAddr data_addr = gallocator->Malloc(table_record_buf->GetSerializeSize());
     record_buf->SetColumn(0, &record_ptr->o_id_);
     record_buf->SetColumn(1, &record_ptr->d_id_);
@@ -535,7 +535,7 @@ class TpccPopulator : public BenchmarkPopulator {
   void InsertOrderLineRecord(OrderLineRecord* record_ptr, TableRecord *table_record_buf,
                              size_t thread_id) {
     GAlloc *gallocator = gallocators[thread_id];
-    Record* record_buf = &(table_record_buf->record_);
+    Record* record_buf = table_record_buf->record_;
     GAddr data_addr = gallocator->Malloc(table_record_buf->GetSerializeSize());
     record_buf->SetColumn(0, &record_ptr->ol_o_id_);
     record_buf->SetColumn(1, &record_ptr->ol_d_id_);
@@ -561,7 +561,7 @@ class TpccPopulator : public BenchmarkPopulator {
   void InsertHistoryRecord(HistoryRecord* record_ptr, TableRecord* table_record_buf,
                            size_t thread_id) {
     GAlloc *gallocator = gallocators[thread_id];
-    Record* record_buf = &(table_record_buf->record_);
+    Record* record_buf = table_record_buf->record_;
     GAddr data_addr = gallocator->Malloc(table_record_buf->GetSerializeSize());
     record_buf->SetColumn(0, &record_ptr->h_c_id_);
     record_buf->SetColumn(1, &record_ptr->h_c_d_id_);
@@ -583,7 +583,7 @@ class TpccPopulator : public BenchmarkPopulator {
   void InsertDistrictNewOrderRecord(DistrictNewOrderRecord* record_ptr,
                                     TableRecord* table_record_buf, size_t thread_id) {
     GAlloc *gallocator = gallocators[thread_id];
-    Record* record_buf = &(table_record_buf->record_);
+    Record* record_buf = table_record_buf->record_;
     GAddr data_addr = gallocator->Malloc(table_record_buf->GetSerializeSize());
     record_buf->SetColumn(0, &record_ptr->d_id_);
     record_buf->SetColumn(1, &record_ptr->w_id_);

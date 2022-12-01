@@ -10,6 +10,14 @@ namespace Database {
         LockContent() = default;
         ~LockContent() = default;
 
+        void SetTimestamp(const uint64_t &timestamp) {
+            // empty
+        }
+
+        uint64_t GetTimestamp() const {
+            return 0;
+        }
+
         // Write the content to the global memory addr
         void Serialize(const GAddr& addr, GAlloc *gallocator) {
             // empty
@@ -22,9 +30,7 @@ namespace Database {
         static size_t GetSerializeSize() {
             return 0;
         }
-    };  
-
-
+    };  // class LockContent
 };  // namespace Database
 
 #endif

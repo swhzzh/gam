@@ -4,10 +4,12 @@
 namespace Database {
   bool TransactionManager::InsertRecord(TxnContext* context, size_t table_id, const IndexKey* keys, 
       size_t key_num, Record *record, const GAddr& record_addr) {
+    TableRecord* table_record = new TableRecord(record);
     Access *access = access_list_.NewAccess();
     access->access_type_ = INSERT_ONLY;
-    access->access_record_ = record;
+    access->access_record_ = table_record;
     access->access_addr_ = record_addr;
+    access->timestamp_ = 0;
     return true;
   }
 
@@ -15,11 +17,13 @@ namespace Database {
       Record *&record, const GAddr& record_addr, AccessType access_type) {
     RecordSchema *schema_ptr = storage_manager_->tables_[table_id]->GetSchema();
     record = new Record(schema_ptr);
-    record->Deserialize(record_addr, gallocators[thread_id_]);
+    TableRecord* table_record = new TableRecord(record);
+    table_record->Deserialize(record_addr, gallocators[thread_id_]);
     Access *access = access_list_.NewAccess();
     access->access_type_ = access_type;
-    access->access_record_ = record;
+    access->access_record_ = table_record;
     access->access_addr_ = record_addr;
+    access->timestamp_ = 0;
     return true;
   }
 
