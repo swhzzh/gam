@@ -8,21 +8,24 @@
 #include "TxnParam.h"
 #include "TimeMeasurer.h"
 #include "StoredProcedure.h"
-#include "Profiler.h"
+// #include "Profiler.h"
+#include "Profilers.h"
 #include "PerfStatistics.h"
 #include <iostream>
 #include <unordered_map>
 #include <boost/thread.hpp>
 #include <atomic>
 #include <xmmintrin.h>
+#include <TimestampManager.h>
 
 namespace Database {
 class TransactionExecutor {
  public:
   TransactionExecutor(IORedirector* const redirector, 
-      StorageManager *storage_manager, size_t thread_count)
+      StorageManager* storage_manager, TimestampManager* ts_manager, size_t thread_count)
       : redirector_ptr_(redirector),
         storage_manager_(storage_manager),
+        ts_manager_(ts_manager),
         thread_count_(thread_count) {
     is_begin_ = false;
     is_finish_ = false;
@@ -101,7 +104,7 @@ class TransactionExecutor {
       *(redirector_ptr_->GetParameterBatches(thread_id));
 
     TransactionManager *txn_manager = new TransactionManager(
-        storage_manager_, this->thread_count_, thread_id);
+        storage_manager_, ts_manager_, this->thread_count_, thread_id);
     StoredProcedure **procedures = new StoredProcedure*[registers_.size()];
     for (auto &entry : registers_) {
       procedures[entry.first] = entry.second();
@@ -120,7 +123,8 @@ class TransactionExecutor {
       for (size_t idx = 0; idx < tuples->size(); ++idx) {
         TxnParam* tuple = tuples->get(idx);
         // begin txn
-        PROFILE_TIME_START(thread_id, TXN_EXECUTE);
+        // PROFILE_TIME_START(thread_id, TXN_EXECUTE);
+        BEGIN_PHASE_MEASURE(thread_id, TXN_EXECUTE);
         ret.size_ = 0;
         if (procedures[tuple->type_]->Execute(tuple, ret) == false) {
           ret.size_ = 0;
@@ -128,10 +132,11 @@ class TransactionExecutor {
           if (is_finish_ == true) {
             total_count_ += count;
             total_abort_count_ += abort_count;
-            PROFILE_TIME_END(thread_id, TXN_EXECUTE);
+            END_PHASE_MEASURE(thread_id, TXN_EXECUTE);
             //txn_manager->CleanUp();
             return;
-          }PROFILE_TIME_START(thread_id, TXN_ABORT);
+          }
+          BEGIN_PHASE_MEASURE(thread_id, TXN_ABORT);
 #if defined(BACKOFF)						
           if (backoff_shifts < 63) {
             ++backoff_shifts;
@@ -151,8 +156,8 @@ class TransactionExecutor {
             if (is_finish_ == true) {
               total_count_ += count;
               total_abort_count_ += abort_count;
-              PROFILE_TIME_END(thread_id, TXN_ABORT);PROFILE_TIME_END(
-                  thread_id, TXN_EXECUTE);
+              END_PHASE_MEASURE(thread_id, TXN_ABORT);
+              END_PHASE_MEASURE(thread_id, TXN_EXECUTE);
               //txn_manager->CleanUp();
               return;
             }
@@ -164,14 +169,15 @@ class TransactionExecutor {
               --spins;
             }
 #endif
-          }PROFILE_TIME_END(thread_id, TXN_ABORT);
+          }
+          END_PHASE_MEASURE(thread_id, TXN_ABORT);
         } else {
 #if defined(BACKOFF)
           backoff_shifts >>= 1;
 #endif
         }
         ++count;
-        PROFILE_TIME_END(thread_id, TXN_EXECUTE);
+        END_PHASE_MEASURE(thread_id, TXN_EXECUTE);
         if (is_finish_ == true) {
           total_count_ += count;
           total_abort_count_ += abort_count;
@@ -192,8 +198,9 @@ class TransactionExecutor {
 
  protected:
   size_t thread_count_;
-  StorageManager *storage_manager_;
+  StorageManager* storage_manager_;
   IORedirector* const redirector_ptr_;
+  TimestampManager* ts_manager_;
 
   std::unordered_map<size_t, std::function<StoredProcedure*()>> registers_;
   std::unordered_map<size_t, std::function<void(StoredProcedure*)>> deregisters_;

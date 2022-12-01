@@ -9,7 +9,7 @@ namespace Database {
                                         size_t key_num,
                                         Record *record,
                                         const GAddr& data_addr) {
-    PROFILE_TIME_START(thread_id_, CC_INSERT);
+    BEGIN_PHASE_MEASURE(thread_id_, CC_INSERT);
     // RecordSchema *schema_ptr = storage_manager_->tables_[table_id]->GetSchema();
     TableRecord* table_record = new TableRecord(record);
     bool lock_success = TryWLockRecord(data_addr, table_record->GetSerializeSize());
@@ -23,7 +23,7 @@ namespace Database {
     // PROFILE_TIME_START(thread_id_, INDEX_INSERT);
     //bool ret = storage_manager_->tables_[table_id]->InsertRecord(keys, key_num, record->data_addr_, thread_id_);
     // PROFILE_TIME_END(thread_id_, INDEX_INSERT);
-    PROFILE_TIME_END(thread_id_, CC_INSERT);
+    END_PHASE_MEASURE(thread_id_, CC_INSERT);
     return true;
   }
 
@@ -34,21 +34,21 @@ namespace Database {
                                           AccessType access_type) {
     epicLog(LOG_DEBUG, "thread_id=%u,table_id=%u,access_type=%u,data_addr=%lx, start SelectRecordCC", 
         thread_id_, table_id, access_type, data_addr);
-    PROFILE_TIME_START(thread_id_, CC_SELECT);
+    BEGIN_PHASE_MEASURE(thread_id_, CC_SELECT);
     RecordSchema *schema_ptr = storage_manager_->tables_[table_id]->GetSchema();
     record = new Record(schema_ptr);
     TableRecord* table_record = new TableRecord(record);
     bool lock_success = true;
     if (access_type == READ_ONLY) {
-      PROFILE_TIME_START(thread_id_, LOCK_READ);
+      BEGIN_PHASE_MEASURE(thread_id_, LOCK_READ);
       lock_success = TryRLockRecord(data_addr, table_record->GetSerializeSize());
-      PROFILE_TIME_END(thread_id_, LOCK_READ);
+      END_PHASE_MEASURE(thread_id_, LOCK_READ);
     }
     else {
       // DELETE_ONLY, READ_WRITE
-      PROFILE_TIME_START(thread_id_, LOCK_WRITE);
+      BEGIN_PHASE_MEASURE(thread_id_, LOCK_WRITE);
       lock_success = TryWLockRecord(data_addr, table_record->GetSerializeSize());
-      PROFILE_TIME_END(thread_id_, LOCK_WRITE);
+      END_PHASE_MEASURE(thread_id_, LOCK_WRITE);
     }
 
     if (lock_success) {
@@ -63,12 +63,12 @@ namespace Database {
       if (access_type == DELETE_ONLY) {
         record->SetVisible(false);
       }
-      PROFILE_TIME_END(thread_id_, CC_SELECT);
+      END_PHASE_MEASURE(thread_id_, CC_SELECT);
       return true;
     }
     else { // fail to acquire lock
       delete table_record;
-      PROFILE_TIME_END(thread_id_, CC_SELECT);
+      END_PHASE_MEASURE(thread_id_, CC_SELECT);
       epicLog(LOG_DEBUG, "thread_id=%u,table_id=%u,access_type=%u,data_addr=%lx,lock fail, abort", 
           thread_id_, table_id, access_type,data_addr);
       this->AbortTransaction();
@@ -79,7 +79,7 @@ namespace Database {
   bool TransactionManager::CommitTransaction(TxnContext* context, 
       TxnParam* param, CharArray& ret_str) {
     epicLog(LOG_DEBUG, "thread_id=%u,txn_type=%d,commit", thread_id_, context->txn_type_);
-    PROFILE_TIME_START(thread_id_, CC_COMMIT);
+    BEGIN_PHASE_MEASURE(thread_id_, CC_COMMIT);
     for (size_t i = 0; i < access_list_.access_count_; ++i) {
       Access* access = access_list_.GetAccess(i);
       assert(access->access_type_ == READ_ONLY || 
@@ -111,13 +111,13 @@ namespace Database {
       access->access_addr_ = Gnullptr;
     }
     access_list_.Clear();
-    PROFILE_TIME_END(thread_id_, CC_COMMIT);
+    END_PHASE_MEASURE(thread_id_, CC_COMMIT);
     return true;
   }
 
   void TransactionManager::AbortTransaction() {
     epicLog(LOG_DEBUG, "thread_id=%u,abort", thread_id_);
-    PROFILE_TIME_START(thread_id_, CC_ABORT);
+    BEGIN_PHASE_MEASURE(thread_id_, CC_ABORT);
     for (size_t i = 0; i < access_list_.access_count_; ++i) {
       Access* access = access_list_.GetAccess(i);
       // Record *record = access->access_record_;
@@ -137,7 +137,7 @@ namespace Database {
       access->access_addr_ = Gnullptr;
     }
     access_list_.Clear();
-    PROFILE_TIME_END(thread_id_, CC_ABORT);
+    END_PHASE_MEASURE(thread_id_, CC_ABORT);
   }
 }
 #endif

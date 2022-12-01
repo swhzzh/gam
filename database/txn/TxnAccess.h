@@ -40,6 +40,19 @@ class AccessList {
     access_count_ = 0;
   }
 
+  void Sort(){
+    std::sort(accesses_, accesses_ + access_count_, GAddrCompFunction);
+  }
+
+  private:
+    static bool CompFunction(Access lhs, Access rhs){
+      return (uint64_t)(lhs.access_record_) < (uint64_t)(rhs.access_record_);
+    }
+
+    static bool GAddrCompFunction(Access lhs, Access rhs){
+      return lhs.access_addr_ < rhs.access_addr_;
+    }
+
  public:
   size_t access_count_;
  private:

@@ -10,8 +10,8 @@ namespace TpccBenchmark {
 class TpccExecutor : public TransactionExecutor {
  public:
   TpccExecutor(IORedirector* const redirector,
-               StorageManager *storage_manager, size_t thread_count_)
-      : TransactionExecutor(redirector, storage_manager, thread_count_) {
+               StorageManager *storage_manager, TimestampManager* ts_manager, size_t thread_count_)
+      : TransactionExecutor(redirector, storage_manager, ts_manager, thread_count_) {
   }
   ~TpccExecutor() {
   }

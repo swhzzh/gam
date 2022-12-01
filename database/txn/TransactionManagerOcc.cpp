@@ -37,7 +37,7 @@ namespace Database {
                                           AccessType access_type) {
     epicLog(LOG_DEBUG, "thread_id=%u,table_id=%u,access_type=%u,data_addr=%lx, start SelectRecordCC", 
         thread_id_, table_id, access_type, data_addr);
-    PROFILE_TIME_START(thread_id_, CC_SELECT);
+    BEGIN_PHASE_MEASURE(thread_id_, CC_SELECT);
     RecordSchema *schema_ptr = storage_manager_->tables_[table_id]->GetSchema();
     record = new Record(schema_ptr);
     TableRecord* table_record = new TableRecord(record);
@@ -51,23 +51,23 @@ namespace Database {
 		if (access_type == DELETE_ONLY) {
 			record->SetVisible(false);
 		}
-		PROFILE_TIME_END(thread_id_, CC_SELECT);
+		END_PHASE_MEASURE(thread_id_, CC_SELECT);
 		return true;
 	}
 
 	bool TransactionManager::CommitTransaction(TxnContext *context, TxnParam *param, CharArray &ret_str){
-		BEGIN_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
+		BEGIN_PHASE_MEASURE(thread_id_, CC_COMMIT);
 		// step 1: acquire lock and validate
 		size_t lock_count = 0;
 		bool is_success = true;
 		access_list_.Sort();
 		for (size_t i = 0; i < access_list_.access_count_; ++i) {
 			++lock_count;
-			Access *access_ptr = access_list_.GetAccess(i);
-			auto &content_ref = access_ptr->access_record_->content_;
+			Access* access_ptr = access_list_.GetAccess(i);
+			TableRecord* table_record = access_ptr->access_record_;
+			auto &content_ref = table_record->content_;
 			if (access_ptr->access_type_ == READ_ONLY) {
-				// acquire read lock
-				content_ref.AcquireReadLock();
+				RLockRecord(access_ptr->access_addr_, table_record->GetSerializeSize());
 				// whether someone has changed the tuple after my read
 				if (content_ref.GetTimestamp() != access_ptr->timestamp_) {
 					UPDATE_CC_ABORT_COUNT(thread_id_, context->txn_type_, access_ptr->table_id_);
@@ -77,7 +77,7 @@ namespace Database {
 			}
 			else if (access_ptr->access_type_ == READ_WRITE) {
 				// acquire write lock
-				content_ref.AcquireWriteLock();
+				WLockRecord(access_ptr->access_addr_, table_record->GetSerializeSize());
 				// whether someone has changed the tuple after my read
 				if (content_ref.GetTimestamp() != access_ptr->timestamp_) {
 					UPDATE_CC_ABORT_COUNT(thread_id_, context->txn_type_, access_ptr->table_id_);
@@ -87,14 +87,15 @@ namespace Database {
 			}
 			else {
 				// insert_only or delete_only
-				content_ref.AcquireWriteLock();
+				WLockRecord(access_ptr->access_addr_, table_record->GetSerializeSize());
 			}
 		}
 
 		// step 2: if success, then overwrite and commit
 		if (is_success == true) {
 			BEGIN_CC_TS_ALLOC_TIME_MEASURE(thread_id_);
-			uint64_t curr_epoch = Epoch::GetEpoch();
+			uint64_t curr_epoch = GetEpoch();
+// TODO(weihaosun): implement silo timestamp
 #if defined(SCALABLE_TIMESTAMP)
 			uint64_t max_rw_ts = 0;
 			for (size_t i = 0; i < access_list_.access_count_; ++i){
@@ -105,32 +106,38 @@ namespace Database {
 			}
 			uint64_t commit_ts = GenerateScalableTimestamp(curr_epoch, max_rw_ts);
 #else
-			uint64_t commit_ts = GenerateMonotoneTimestamp(curr_epoch, GlobalTimestamp::GetMonotoneTimestamp());
+			uint64_t commit_ts = GenerateMonotoneTimestamp(curr_epoch, GetMonotoneTimestamp());
 #endif
 			END_CC_TS_ALLOC_TIME_MEASURE(thread_id_);
 
 			for (size_t i = 0; i < access_list_.access_count_; ++i) {
 				Access *access_ptr = access_list_.GetAccess(i);
-				SchemaRecord *global_record_ptr = access_ptr->access_record_->record_;
-				SchemaRecord *local_record_ptr = access_ptr->local_record_;
-				auto &content_ref = access_ptr->access_record_->content_;
+				// SchemaRecord *global_record_ptr = access_ptr->access_record_->record_;
+				// SchemaRecord *local_record_ptr = access_ptr->local_record_;
+				TableRecord* table_record = access_ptr->access_record_;
+				GAddr& access_addr = access_ptr->access_addr_;
+				auto &content_ref = table_record->content_;
 				if (access_ptr->access_type_ == READ_WRITE) {
 					assert(commit_ts > access_ptr->timestamp_);
-					global_record_ptr->CopyFrom(local_record_ptr);
-					COMPILER_MEMORY_FENCE;
+					// global_record_ptr->CopyFrom(local_record_ptr);
+					// TODO(weihaosun): do not need local memory fence?
+					// COMPILER_MEMORY_FENCE;
 					content_ref.SetTimestamp(commit_ts);
+					table_record->Serialize(access_addr, gallocators[thread_id_]);
 				}
 				else if (access_ptr->access_type_ == INSERT_ONLY) {
 					assert(commit_ts > access_ptr->timestamp_);
-					global_record_ptr->is_visible_ = true;
-					COMPILER_MEMORY_FENCE;
+					table_record->record_->SetVisible(true);
+					// COMPILER_MEMORY_FENCE;
 					content_ref.SetTimestamp(commit_ts);
+					table_record->Serialize(access_addr, gallocators[thread_id_]);
 				}
 				else if (access_ptr->access_type_ == DELETE_ONLY) {
 					assert(commit_ts > access_ptr->timestamp_);
-					global_record_ptr->is_visible_ = false;
-					COMPILER_MEMORY_FENCE;
+					table_record->record_->SetVisible(false);
+					// COMPILER_MEMORY_FENCE;
 					content_ref.SetTimestamp(commit_ts);
+					table_record->Serialize(access_addr, gallocators[thread_id_]);
 				}
 			}
 			// commit.
@@ -146,22 +153,20 @@ namespace Database {
 			// step 3: release locks and clean up.
 			for (size_t i = 0; i < access_list_.access_count_; ++i) {
 				Access *access_ptr = access_list_.GetAccess(i);
-				if (access_ptr->access_type_ == READ_ONLY) {
-					access_ptr->access_record_->content_.ReleaseReadLock();
+				// unlock
+				this->UnLockRecord(access->access_addr_, access->access_record_->GetSerializeSize());
+			}
+
+			//GC
+			for (size_t i = 0; i < access_list_.access_count_; ++i) {
+				Access* access = access_list_.GetAccess(i);
+				if (access->access_type_ == DELETE_ONLY) {
+					gallocators[thread_id_]->Free(access->access_addr_);
+					access->access_addr_ = Gnullptr;
 				}
-				else if (access_ptr->access_type_ == READ_WRITE) {
-					access_ptr->access_record_->content_.ReleaseWriteLock();
-					BEGIN_CC_MEM_ALLOC_TIME_MEASURE(thread_id_);
-					SchemaRecord *local_record_ptr = access_ptr->local_record_;
-					MemAllocator::Free(local_record_ptr->data_ptr_);
-					local_record_ptr->~SchemaRecord();
-					MemAllocator::Free((char*)local_record_ptr);
-					END_CC_MEM_ALLOC_TIME_MEASURE(thread_id_);
-				}
-				else{
-					// insert_only or delete_only
-					access_ptr->access_record_->content_.ReleaseWriteLock();
-				}
+				delete access->access_record_;
+				access->access_record_ = nullptr;
+				access->access_addr_ = Gnullptr;
 			}
 		}
 		// if failed.
@@ -169,31 +174,25 @@ namespace Database {
 			// step 3: release locks and clean up.
 			for (size_t i = 0; i < access_list_.access_count_; ++i) {
 				Access *access_ptr = access_list_.GetAccess(i);
-				if (access_ptr->access_type_ == READ_ONLY) {
-					access_ptr->access_record_->content_.ReleaseReadLock();
-				}
-				else if (access_ptr->access_type_ == READ_WRITE) {
-					SchemaRecord *local_record_ptr = access_ptr->local_record_;
-					access_ptr->access_record_->content_.ReleaseWriteLock();
-					BEGIN_CC_MEM_ALLOC_TIME_MEASURE(thread_id_);
-					MemAllocator::Free(local_record_ptr->data_ptr_);
-					local_record_ptr->~SchemaRecord();
-					MemAllocator::Free((char*)local_record_ptr);
-					END_CC_MEM_ALLOC_TIME_MEASURE(thread_id_);
-				}
-				else{
-					// insert_only or delete_only
-					access_ptr->access_record_->content_.ReleaseWriteLock();
-				}
+				// unlock
+				this->UnLockRecord(access->access_addr_, access->access_record_->GetSerializeSize());
 				--lock_count;
 				if (lock_count == 0) {
 					break;
 				}
 			}
+
+			//GC
+			for (size_t i = 0; i < access_list_.access_count_; ++i) {
+				Access* access = access_list_.GetAccess(i);
+				delete access->access_record_;
+				access->access_record_ = nullptr;
+				access->access_addr_ = Gnullptr;
+			}
 		}
 		assert(access_list_.access_count_ <= kMaxAccessNum);
 		access_list_.Clear();
-		END_PHASE_MEASURE(thread_id_, COMMIT_PHASE);
+		END_PHASE_MEASURE(thread_id_, CC_COMMIT);
 		return is_success;
 	}
 

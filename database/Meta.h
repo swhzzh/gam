@@ -35,6 +35,9 @@ const uint64_t kHashIndexBucketHeaderNum = 1000007;
 const size_t kTryLockLimit = 1;
 const size_t kMaxAccessLimit = 256;
 
+const size_t kBatchTsNum = 16;
+const size_t kMaxThreadNum = 32;
+
 extern GAlloc* default_gallocator;
 extern GAlloc** gallocators;
 extern size_t gThreadCount;

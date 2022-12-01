@@ -5,7 +5,8 @@
 #include "ClusterHelper.h"
 #include "ClusterConfig.h"
 #include "StorageManager.h"
-#include "Profiler.h"
+// #include "Profiler.h"
+// #include "Profilers.h"
 #include "PerfStatistics.h"
 
 namespace Database {
@@ -53,21 +54,48 @@ class BenchmarkInitiator {
       std::vector<RecordSchema*> schemas;
       this->RegisterSchemas(schemas);
       // StorageManager
+      // TODO(weihaosun): free this global mem before exiting?
       storage_addr = default_gallocator->AlignedMalloc(
           StorageManager::GetSerializeSize());
       this->RegisterTables(storage_addr, schemas);
     } 
     return storage_addr;
   }
+
+  GAddr InitEpoch() {
+    GAddr epoch_addr = Gnullptr;
+    int my_partition_id = config_->GetMyPartitionId();
+    int partition_num = config_->GetPartitionNum();
+    if (config_->IsMaster()) {
+			epoch_addr = default_gallocator->AlignedMalloc(sizeof(uint64_t));
+			uint64_t epoch = 1;
+			default_gallocator->Write(epoch_addr, &epoch, sizeof(epoch));
+			default_gallocator->MFence();
+    }
+    return epoch_addr;
+  }
+
+  GAddr InitMonotoneTimestamp() {
+    GAddr monotome_ts_addr = Gnullptr;
+    int my_partition_id = config_->GetMyPartitionId();
+    int partition_num = config_->GetPartitionNum();
+    if (config_->IsMaster()) {
+			monotome_ts_addr = default_gallocator->AlignedMalloc(sizeof(uint64_t));
+			uint64_t ts = 1;
+			default_gallocator->Write(monotome_ts_addr, &ts, sizeof(ts));
+			default_gallocator->MFence();
+    }
+    return monotome_ts_addr;
+  }
   
- protected:
-  virtual void RegisterTables(const GAddr& storage_addr, 
-      const std::vector<RecordSchema*>& schemas) {}
+  protected:
+    virtual void RegisterTables(const GAddr& storage_addr, 
+        const std::vector<RecordSchema*>& schemas) {}
 
-  virtual void RegisterSchemas(std::vector<RecordSchema*>& schemas) {}
+    virtual void RegisterSchemas(std::vector<RecordSchema*>& schemas) {}
 
-  const size_t thread_count_;
-  ClusterConfig* config_;
+    const size_t thread_count_;
+    ClusterConfig* config_;
 };
 }
 

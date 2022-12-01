@@ -8,7 +8,7 @@
 #include "RecordSchema.h"
 #include "Meta.h"
 #include "HashIndex.h"
-#include "Profiler.h"
+// #include "Profiler.h"
 
 namespace Database {
 class Table : public GAMObject{

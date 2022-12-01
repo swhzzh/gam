@@ -3,7 +3,8 @@
 
 #include "HashIndexHelper.h"
 #include "GAddrArray.h"
-#include "Profiler.h"
+// #include "Profiler.h"
+#include "Profilers.h"
 
 namespace Database {
 class HashIndex : public GAMObject{
@@ -34,26 +35,36 @@ public:
     uint64_t offset = Hash(key);
     GAddr hd_addr = buckets_.GetElementGAddr(offset, gallocator);
 
-    PROFILE_TIME_START(thread_id, INDEX_INSERT_LOCK);
+    // PROFILE_TIME_START(thread_id, INDEX_INSERT_LOCK);
+    BEGIN_PHASE_MEASURE(thread_id, INDEX_INSERT_LOCK);
     this->TryWLockBucketHeader(hd_addr, gallocator);
-    PROFILE_TIME_END(thread_id, INDEX_INSERT_LOCK);
+    // PROFILE_TIME_END(thread_id, INDEX_INSERT_LOCK);
+    END_PHASE_MEASURE(thread_id, INDEX_INSERT_LOCK);
 
-    PROFILE_TIME_START(thread_id, INDEX_INSERT_GALLOCATE);
+    // PROFILE_TIME_START(thread_id, INDEX_INSERT_GALLOCATE);
+    BEGIN_PHASE_MEASURE(thread_id, INDEX_INSERT_GALLOCATE);
     BucketHeader bk_hd;
     bk_hd.Deserialize(hd_addr, gallocator);
-    PROFILE_TIME_END(thread_id, INDEX_INSERT_GALLOCATE);
+    // PROFILE_TIME_END(thread_id, INDEX_INSERT_GALLOCATE);
+    END_PHASE_MEASURE(thread_id, INDEX_INSERT_GALLOCATE);
 
-    PROFILE_TIME_START(thread_id, INDEX_INSERT_MUTATE);
+    // PROFILE_TIME_START(thread_id, INDEX_INSERT_MUTATE);
+    BEGIN_PHASE_MEASURE(thread_id, INDEX_INSERT_MUTATE);
     bool ret = bk_hd.InsertNode(key, record_ptr, gallocator);
-    PROFILE_TIME_END(thread_id, INDEX_INSERT_MUTATE);
+    // PROFILE_TIME_END(thread_id, INDEX_INSERT_MUTATE);
+    END_PHASE_MEASURE(thread_id, INDEX_INSERT_MUTATE);
 
-    PROFILE_TIME_START(thread_id, INDEX_INSERT_GALLOCATE);
+    // PROFILE_TIME_START(thread_id, INDEX_INSERT_GALLOCATE);
+    BEGIN_PHASE_MEASURE(thread_id, INDEX_INSERT_GALLOCATE);
     bk_hd.Serialize(hd_addr, gallocator);
-    PROFILE_TIME_END(thread_id, INDEX_INSERT_GALLOCATE);
+    // PROFILE_TIME_END(thread_id, INDEX_INSERT_GALLOCATE);
+    END_PHASE_MEASURE(thread_id, INDEX_INSERT_GALLOCATE);
 
-    PROFILE_TIME_START(thread_id, INDEX_INSERT_LOCK);
+    // PROFILE_TIME_START(thread_id, INDEX_INSERT_LOCK);
+    BEGIN_PHASE_MEASURE(thread_id, INDEX_INSERT_LOCK);
     this->UnLock(hd_addr, gallocator);
-    PROFILE_TIME_END(thread_id, INDEX_INSERT_LOCK);
+    // PROFILE_TIME_END(thread_id, INDEX_INSERT_LOCK);
+    END_PHASE_MEASURE(thread_id, INDEX_INSERT_LOCK);
 
     record_count_++;
     return ret;
