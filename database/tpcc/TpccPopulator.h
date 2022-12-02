@@ -55,7 +55,7 @@ class TpccPopulator : public BenchmarkPopulator {
     TableRecord *item_table_record_buf = new TableRecord(item_record_buf);
     TableRecord *warehouse_table_record_buf = new TableRecord(warehouse_record_buf);
     TableRecord *district_table_record_buf = new TableRecord(district_record_buf);
-    TableRecord *customer_table_record_buf = new TableRecord(customer_record_buf));
+    TableRecord *customer_table_record_buf = new TableRecord(customer_record_buf);
     TableRecord *history_table_record_buf = new TableRecord(history_record_buf);
     TableRecord *district_new_order_table_record_buf = new TableRecord(district_new_order_record_buf);
     TableRecord *order_table_record_buf = new TableRecord(order_record_buf);
