@@ -69,6 +69,7 @@ namespace Database {
 			if (access_ptr->access_type_ == READ_ONLY) {
 				RLockRecord(access_ptr->access_addr_, table_record->GetSerializeSize());
 				// whether someone has changed the tuple after my read
+				// NOTE(weihaosun): avoid write skew?
 				if (content_ref.GetTimestamp() != access_ptr->timestamp_) {
 					UPDATE_CC_ABORT_COUNT(thread_id_, context->txn_type_, access_ptr->table_id_);
 					is_success = false;
