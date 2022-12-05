@@ -37,6 +37,7 @@ namespace Database {
                                           AccessType access_type) {
     epicLog(LOG_DEBUG, "thread_id=%u,table_id=%u,access_type=%u,data_addr=%lx, start SelectRecordCC", 
         thread_id_, table_id, access_type, data_addr);
+		assert(access_type != INSERT_ONLY);
     BEGIN_PHASE_MEASURE(thread_id_, CC_SELECT);
     RecordSchema *schema_ptr = storage_manager_->tables_[table_id]->GetSchema();
     record = new Record(schema_ptr);
@@ -48,6 +49,7 @@ namespace Database {
 		access->access_record_ = table_record;
 		access->access_addr_ = data_addr;
 		access->timestamp_ = table_record->content_.GetTimestamp();
+		// TODO(weihaosun): not actually used, maybe remove later?
 		if (access_type == DELETE_ONLY) {
 			record->SetVisible(false);
 		}
@@ -68,6 +70,7 @@ namespace Database {
 			auto &content_ref = table_record->content_;
 			if (access_ptr->access_type_ == READ_ONLY) {
 				RLockRecord(access_ptr->access_addr_, table_record->GetSerializeSize());
+				table_record->Deserialize(data_addr, gallocators[thread_id_]);
 				// whether someone has changed the tuple after my read
 				// NOTE(weihaosun): avoid write skew?
 				if (content_ref.GetTimestamp() != access_ptr->timestamp_) {
@@ -79,6 +82,7 @@ namespace Database {
 			else if (access_ptr->access_type_ == READ_WRITE) {
 				// acquire write lock
 				WLockRecord(access_ptr->access_addr_, table_record->GetSerializeSize());
+				table_record->Deserialize(data_addr, gallocators[thread_id_]);
 				// whether someone has changed the tuple after my read
 				if (content_ref.GetTimestamp() != access_ptr->timestamp_) {
 					UPDATE_CC_ABORT_COUNT(thread_id_, context->txn_type_, access_ptr->table_id_);

@@ -58,6 +58,44 @@ class AccessList {
  private:
   Access accesses_[N];
 };
+
+template<int N>
+class AccessPtrList{
+public:
+  AccessPtrList() : access_count_(0) {}
+
+  void Add(Access *access) {
+    assert(access_count_ < N);
+    accesses_[access_count_] = access;
+    ++access_count_;
+  }
+
+  Access *GetAccess(const size_t &index){
+    return accesses_[index];
+  }
+
+  void Clear() {
+    access_count_ = 0;
+  }
+
+  void Sort(){
+    std::sort(accesses_, accesses_ + access_count_, GAddrCompFunction);
+  }
+
+private:
+  static bool CompFunction(Access *lhs, Access *rhs){
+    return (uint64_t)(lhs->access_record_) < (uint64_t)(rhs->access_record_);
+  }
+
+  static bool GAddrCompFunction(Access lhs, Access rhs){
+    return lhs.access_addr_ < rhs.access_addr_;
+  }
+
+public:
+  size_t access_count_;
+private:
+  Access *accesses_[N];
+};
 }
 
 #endif
