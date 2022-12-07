@@ -1,6 +1,6 @@
 #include "ExecutionProfiler.h"
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		std::unordered_map<size_t, long long> *execution_stat_;
 #if defined(PRECISE_TIMER)
@@ -9,4 +9,4 @@ namespace Cavalia{
 		TimeMeasurer *execution_timer_;
 #endif
 	}
-}
+// }

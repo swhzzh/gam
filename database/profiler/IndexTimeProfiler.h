@@ -46,7 +46,7 @@
 #define REPORT_INDEX_TIME_PROFILER ;
 #endif
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		extern long long* access_index_stat_;
 #if defined(PRECISE_TIMER)
@@ -55,6 +55,6 @@ namespace Cavalia{
 		extern TimeMeasurer *access_index_timer_;
 #endif
 	}
-}
+// }
 
 #endif

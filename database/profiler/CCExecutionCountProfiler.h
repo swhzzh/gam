@@ -36,9 +36,9 @@ for (auto &entry_count : ordered_count){ \
 #define REPORT_CC_EXECUTION_COUNT_PROFILER ;
 #endif
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		extern std::unordered_map<size_t, size_t> *cc_execution_count_;
 	}
-}
+// }
 #endif

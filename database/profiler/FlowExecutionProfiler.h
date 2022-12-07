@@ -132,7 +132,7 @@ if (total != 0) { printf("slice id=%d, total time=%lld ms\n", slice_id, total / 
 #define INC_CORE_WAIT_COUNT(core_id);
 #endif
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		extern long long central_execution_time_stat_;
 		extern long long *core_busy_time_stat_;
@@ -151,5 +151,5 @@ namespace Cavalia{
 		extern TimeMeasurer *core_execute_timer_;
 #endif
 	}
-}
+// }
 #endif

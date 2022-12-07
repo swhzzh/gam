@@ -1,6 +1,6 @@
 #include "CCTsAllocTimeProfiler.h"
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		long long *cc_ts_alloc_time_stat_;
 #if defined(PRECISE_TIMER)
@@ -9,4 +9,4 @@ namespace Cavalia{
 		TimeMeasurer *cc_ts_alloc_timer_;
 #endif
 	}
-}
+// }

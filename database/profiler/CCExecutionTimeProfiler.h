@@ -63,7 +63,7 @@ for (auto &entry : ordered_stat){ \
 #define REPORT_CC_EXECUTION_TIME_PROFILER ;
 #endif
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		static const int kPointTypeNum = 4;
 		enum MvToPointType : size_t { SELECT_INDEX_POINT, MVTO_REQUST_WRITE_POINT, MVTO_REQUST_READ_POINT, MVTO_WORKSET_POINT };
@@ -74,5 +74,5 @@ namespace Cavalia{
 		extern TimeMeasurer **cc_execution_timer_;
 #endif
 	}
-}
+// }
 #endif

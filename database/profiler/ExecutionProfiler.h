@@ -55,7 +55,7 @@ for (auto &entry : ordered_stat){ \
 #define REPORT_EXECUTION_PROFILER ;
 #endif
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		extern std::unordered_map<size_t, long long> *execution_stat_;
 #if defined(PRECISE_TIMER)
@@ -64,6 +64,6 @@ namespace Cavalia{
 		extern TimeMeasurer *execution_timer_;
 #endif
 	}
-}
+// }
 
 #endif

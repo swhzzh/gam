@@ -49,7 +49,7 @@ printf("thread_id = %d, elapsed_time = %lld ms\n", i, cc_wait_time_stat_[i] / 10
 #define REPORT_CC_WAIT_TIME_PROFILER ;
 #endif
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		extern long long *cc_wait_time_stat_;
 #if defined(PRECISE_TIMER)
@@ -58,5 +58,5 @@ namespace Cavalia{
 		extern TimeMeasurer *cc_wait_timer_;
 #endif
 	}
-}
+// }
 #endif

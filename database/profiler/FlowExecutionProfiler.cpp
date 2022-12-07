@@ -1,6 +1,6 @@
 #include "FlowExecutionProfiler.h"
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		long long central_execution_time_stat_;
 		long long *core_busy_time_stat_;
@@ -18,4 +18,4 @@ namespace Cavalia{
 		TimeMeasurer *core_execute_timer_;
 #endif
 	}
-}
+// }

@@ -50,7 +50,7 @@ if (cc_abort_time_stat_[i] != 0){ \
 #define REPORT_CC_ABORT_TIME_PROFILER ;
 #endif
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		extern long long *cc_abort_time_stat_;
 #if defined(PRECISE_TIMER)
@@ -59,6 +59,6 @@ namespace Cavalia{
 		extern TimeMeasurer *cc_abort_timer_;
 #endif
 	}
-}
+// }
 
 #endif

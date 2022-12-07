@@ -39,9 +39,9 @@ for (auto &entry_inner : ordered_inner){ \
 #define REPORT_CC_ABORT_COUNT_PROFILER ;
 #endif
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		extern std::unordered_map<size_t, std::unordered_map<size_t, size_t>> *cc_abort_count_;
 	}
-}
+// }
 #endif

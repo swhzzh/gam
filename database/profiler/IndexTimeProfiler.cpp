@@ -1,6 +1,6 @@
 #include "IndexTimeProfiler.h"
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		long long* access_index_stat_;
 #if defined(PRECISE_TIMER)
@@ -9,4 +9,4 @@ namespace Cavalia{
 		TimeMeasurer *access_index_timer_;
 #endif
 	}
-}
+// }

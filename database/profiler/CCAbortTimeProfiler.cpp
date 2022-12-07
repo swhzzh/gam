@@ -1,6 +1,6 @@
 #include "CCAbortTimeProfiler.h"
 
-namespace Cavalia{
+// namespace Cavalia{
 	namespace Database{
 		long long *cc_abort_time_stat_;
 #if defined(PRECISE_TIMER)
@@ -9,4 +9,4 @@ namespace Cavalia{
 		TimeMeasurer *cc_abort_timer_;
 #endif
 	}
-}
+// }
